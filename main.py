@@ -1,6 +1,7 @@
 from flask import Flask, request
 app = Flask(__name__)
 
+
 import requests
 import nltk
 import re
@@ -159,3 +160,4 @@ if __name__ == "__main__":
     nltk.download('averaged_perceptron_tagger')
     verifier = NewsVerifier()
     app.run(port=8000, debug=True)
+
