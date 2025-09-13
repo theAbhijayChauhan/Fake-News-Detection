@@ -1,71 +1,71 @@
-from flask import Flask, request
+from flask import Flask, request, render_template_string
 app = Flask(__name__)
-
 
 import requests
 import nltk
-import re
+# nltk.download('punkt')
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
 from config import NEWS_API_KEY
-from sentence_transformers import SentenceTransformer, util
+import re
 
-# Load lightweight BERT model
-model = SentenceTransformer('all-MiniLM-L6-v2')
+# nltk.download('punkt')
+# nltk.download('stopwords')
 
 class NewsVerifier:
     def __init__(self):
-        pass
-
+        self.vectorizer = TfidfVectorizer(stop_words='english')
+        
     def clean_text(self, text):
         text = text.lower()
         text = re.sub(r'[^\w\s]', '', text)
         return text
-
+    
     def query_keywords(self, statement):
-        # Keep only nouns and proper nouns for better queries
-        words = nltk.word_tokenize(statement)
-        pos_tags = nltk.pos_tag(words)
-        filtered = [w for w, t in pos_tags if t in ('NN', 'NNP', 'NNS', 'NNPS')]
-        return ' '.join(filtered) if filtered else statement
+        stop_words = set(nltk.corpus.stopwords.words('english'))
+        question_words = {'is', 'are', 'was', 'were', 'did', 'do', 'does', 'has', 'have', 'had','can', 'could', 'should', 'would', 'what', 'when', 'where', 'who', 'why', 'how'}
+        words = nltk.word_tokenize(statement.lower())
+        filtered = [w for w in words if w.isalpha() and w not in stop_words and w not in question_words]
+        return ' '.join(filtered)
 
     def get_news_articles(self, query):
         url = f"https://newsapi.org/v2/everything?q={query}&apiKey={NEWS_API_KEY}&pageSize=100"
         response = requests.get(url)
         if response.status_code == 200:
             articles = [
-                (article.get('title','') + " " + article.get('description','') + " " + article.get('content',''))
-                for article in response.json().get('articles', [])
-            ]
+                (article['title'] or '') + " " + (article['description'] or '')
+                        for article in response.json().get('articles', [])]
             print(f"DEBUG: Retrieved {len(articles)} articles for query '{query}'")
             return articles
         else:
             print("Error fetching news:", response.json())
             return []
-
+    
     def verify_statement(self, statement):
-        # Step 1: Extract keywords & fetch articles
+        # Get news articles related to the statement
         query = self.query_keywords(statement)
         articles = self.get_news_articles(query)
-
+        
+        print(f"DEBUG: Sample articles fetched:")
+        for art in articles[:3]:
+            print(art[:100])
+            
         if not articles:
-            return False, 0.0, 0, []
-
-        # Step 2: Clean texts
+            return False, 0.0, 0, []  # Return 4 values now
+            
+        # Preprocess texts
         clean_statement = self.clean_text(statement)
         clean_articles = [self.clean_text(article) for article in articles]
-
-        # Step 3: Encode with BERT
-        embeddings = model.encode([clean_statement] + clean_articles, convert_to_tensor=True)
-
-        # Step 4: Compute cosine similarities
-        similarities = util.cos_sim(embeddings[0], embeddings[1:]).cpu().numpy().flatten()
-
+        
+        # Vectorize and compare
+        tfidf_matrix = self.vectorizer.fit_transform([clean_statement] + clean_articles)
+        similarities = cosine_similarity(tfidf_matrix[0:1], tfidf_matrix[1:])
+        
         max_similarity = similarities.max()
-        best_idx = similarities.argmax()
-        best_article = articles[best_idx]
-
-        # Step 5: Decide based on threshold
-        threshold = 0.3  # tuned for BERT
-        return max_similarity > threshold, float(max_similarity * 100), len(articles), [best_article]
+        threshold = 0.05
+        
+        # Return article count and sample articles too
+        return max_similarity > threshold, float(max_similarity * 100), len(articles), articles[:5]
 
 @app.route('/')
 def home():
@@ -78,9 +78,11 @@ def home():
 def verify():
     claim = request.form.get('claim', '')
     is_true, confidence, article_count, sample_articles = verifier.verify_statement(claim)
+    
     return render_result_page(claim, is_true, confidence, article_count, sample_articles)
 
 def render_result_page(claim, is_true, confidence, article_count, sample_articles):
+    # Create HTML for sample articles
     articles_html = ""
     if article_count > 0:
         articles_html = f"""
@@ -90,22 +92,24 @@ def render_result_page(claim, is_true, confidence, article_count, sample_article
                 Searched {article_count} Articles
             </h3>
             <div class="bg-gray-50 p-4 rounded-lg">
-                <h4 class="font-medium text-gray-700 mb-2">Most Relevant Article:</h4>
+                <h4 class="font-medium text-gray-700 mb-2">Sample Articles:</h4>
                 <div class="space-y-2 text-sm">
         """
-        for i, article in enumerate(sample_articles):
+        
+        for i, article in enumerate(sample_articles[:3]):  # Show top 3
             articles_html += f"""
                     <div class="flex items-start">
                         <span class="bg-indigo-100 text-indigo-600 rounded-full w-5 h-5 flex items-center justify-center text-xs mr-2 mt-1">{i+1}</span>
-                        <span class="text-gray-600">"{article[:200]}..."</span>
+                        <span class="text-gray-600">"{article[:120]}..."</span>
                     </div>
             """
+        
         articles_html += """
                 </div>
             </div>
         </div>
         """
-
+    
     return f"""
     <!DOCTYPE html>
     <html>
@@ -156,8 +160,5 @@ def render_result_page(claim, is_true, confidence, article_count, sample_article
     """
 
 if __name__ == "__main__":
-    nltk.download('punkt')
-    nltk.download('averaged_perceptron_tagger')
-    verifier = NewsVerifier()
-    app.run(port=8000, debug=True)
-
+    verifier = NewsVerifier()  # Initialize your verifier
+    app.run(port=8000, debug=True)  # Start Flask server
