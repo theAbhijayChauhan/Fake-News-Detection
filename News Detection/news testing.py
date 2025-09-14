@@ -7,7 +7,7 @@ import re
 # Initialize NewsAPI
 newsapi = NewsApiClient(api_key='75200db5e571465b9650cc1050a8470c')  # Replace with your key
 
-# Load BERT
+# Load BERT  (BERT model)
 tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
 model = BertModel.from_pretrained('bert-base-uncased')
 
