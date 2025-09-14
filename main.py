@@ -147,7 +147,8 @@ def render_result_page(claim, is_true, confidence, article_count, sample_article
                         <span class="ml-2 bg-blue-600 text-white px-2 py-1 rounded-full text-sm">{article_count}</span>
                     </p>
                 </div>
-                
+
+
                 {articles_html if article_count > 0 else '<p class="text-red-500">No articles found for verification</p>'}
             </div>
             
@@ -162,3 +163,4 @@ def render_result_page(claim, is_true, confidence, article_count, sample_article
 if __name__ == "__main__":
     verifier = NewsVerifier()  # Initialize your verifier
     app.run(port=8000, debug=True)  # Start Flask server
+
