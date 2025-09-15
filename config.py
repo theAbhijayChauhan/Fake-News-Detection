@@ -3,4 +3,5 @@
 
 
 
-NEWS_API_KEY = "d6ffa963ec1b4adc85210666fc37c49"  # Actual NewsAPI key here "last letter = d"
+NEWS_API_KEY = "d6ffa963ec1b4adc85210666fc37c49"  # NewsAPI key here " = d"
+
