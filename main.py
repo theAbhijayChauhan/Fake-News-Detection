@@ -160,7 +160,9 @@ def render_result_page(claim, is_true, confidence, article_count, sample_article
     </html>
     """
 
+# to start the server !
 if __name__ == "__main__":
     verifier = NewsVerifier()  # Initialize your verifier
     app.run(port=8000, debug=True)  # Start Flask server
+
 
