@@ -504,3 +504,4 @@ if __name__ == "__main__":
     print("Starting AI Fact Checker API...")
     print("Make sure you have installed: pip install fastapi uvicorn sentence-transformers feedparser numpy")
     uvicorn.run(app, host="0.0.0.0", port=8000)
+# taken help from AI also!
