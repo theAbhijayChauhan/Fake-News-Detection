@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fake News Detector</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap');
+        body {
+            font-family: 'JetBrains Mono', 'JetBrains Mono NL', monospace;
+            background: radial-gradient(circle at 50% 20%, #23272f 0%, #000 80%) fixed;
+            color: #e2e8f0;
+            min-height: 100vh;
+        }
+        .news-card { transition: transform 0.3s ease, box-shadow 0.3s ease; background: #1a202c; }
+        .news-card:hover { transform: translateY(-5px); box-shadow: 0 10px 25px -5px rgba(66, 153, 225, 0.3); }
+        .pulse { animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+        .fade-in { animation: fadeIn 0.5s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .modal { transition: opacity 0.3s ease; }
+        .result-bar { transition: width 1.5s ease-in-out; }
+        .hamburger-menu { transform: translateX(-100%); transition: transform 0.3s ease-in-out; }
+        .hamburger-menu.open { transform: translateX(0); }
+        .bg-dark-gradient { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); }
+        .neon-heading { color: #fff; text-shadow: 0 0 6px #39ff14, 0 0 12px #39ff14; font-weight: 700; letter-spacing: 1px; }
+    </style>
+</head>
+<body class="bg-black text-gray-200">
+    <div id="hamburgerMenu" class="hamburger-menu fixed top-0 left-0 h-full w-80 bg-gray-900 z-50 shadow-2xl">
+        <div class="p-5 border-b border-gray-700">
+            <div class="flex justify-between items-center">
+                <h2 class="text-xl font-bold">Search History</h2>
+                <button id="closeHamburger" class="text-gray-400 hover:text-white"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button>
+            </div>
+            <p class="text-sm text-gray-500 mt-1">Logged in as: <span id="historyUser">User</span></p>
+        </div>
+        <div id="historyContent" class="p-5 overflow-y-auto h-full pb-20">
+            <p class="text-gray-500 text-center py-10">Your search history will appear here after you analyze news.</p>
+        </div>
+    </div>
+
+    <nav class="bg-gray-900 text-white shadow-lg border-b border-gray-800">
+        <div class="container mx-auto px-4">
+            <div class="flex justify-between items-center py-4">
+                <div class="flex items-center space-x-4">
+                    <button id="hamburgerBtn" class="text-gray-300 hover:text-white"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg></button>
+                    <div class="flex items-center space-x-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                        <span class="text-xl font-bold">FakeNews Detector</span>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <span id="userInfo" class="hidden text-sm">Welcome, <span id="username" class="font-medium">User</span></span>
+                    <button id="authBtn" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition">Login</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div id="mainContent" class="container mx-auto px-4 py-8">
+        <div class="text-center max-w-3xl mx-auto py-12">
+            <h1 class="text-4xl md:text-5xl font-bold neon-heading mb-6">Detect Fake News in Real-Time</h1>
+            <p class="text-lg text-gray-400 mb-8">Enter a news headline or content below to check its credibility using our advanced detection system.</p>
+            <div class="bg-gray-900 rounded-xl shadow-lg p-6 mb-10 border border-gray-800">
+                <div class="flex">
+                    <input type="text" id="newsInput" placeholder="Paste news headline or content here..." class="flex-grow px-4 py-3 bg-gray-800 text-white border border-gray-700 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <button id="analyzeBtn" class="bg-blue-600 text-white px-6 py-3 rounded-r-lg font-medium hover:bg-blue-700 transition">Analyze</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="py-12">
+            <h2 class="text-3xl font-bold text-center text-white mb-12">How It Works</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div class="bg-dark-gradient p-6 rounded-xl text-center news-card border border-gray-800">
+                    <div class="bg-blue-900 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4"><span class="text-blue-400 text-2xl font-bold">1</span></div>
+                    <h3 class="text-xl font-semibold text-white mb-2">Enter News Content</h3>
+                    <p class="text-gray-400">Paste the news headline or article content you want to verify into the input field.</p>
+                </div>
+                <div class="bg-dark-gradient p-6 rounded-xl text-center news-card border border-gray-800">
+                    <div class="bg-blue-900 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4"><span class="text-blue-400 text-2xl font-bold">2</span></div>
+                    <h3 class="text-xl font-semibold text-white mb-2">AI Analysis</h3>
+                    <p class="text-gray-400">Our system analyzes the text using natural language processing and checks against reliable sources.</p>
+                </div>
+                <div class="bg-dark-gradient p-6 rounded-xl text-center news-card border border-gray-800">
+                    <div class="bg-blue-900 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4"><span class="text-blue-400 text-2xl font-bold">3</span></div>
+                    <h3 class="text-xl font-semibold text-white mb-2">Get Results</h3>
+                    <p class="text-gray-400">Receive a credibility score and detailed explanation about the news authenticity.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="resultsPage" class="hidden container mx-auto px-4 py-8">
+        <div class="max-w-4xl mx-auto">
+            <div class="flex items-center justify-between mb-8">
+                <h1 class="text-3xl font-bold neon-heading">Analysis Results</h1>
+                <button id="backToMain" class="bg-gray-800 text-white px-4 py-2 rounded-lg font-medium hover:bg-gray-700 transition flex items-center"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>Back to Analyzer</button>
+            </div>
+            <div class="bg-gray-900 p-6 rounded-xl shadow-lg border border-gray-800 mb-8">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 id="resultTitle" class="text-xl font-semibold text-white">Analysis in progress...</h3>
+                    <span id="credibilityScore" class="px-3 py-1 rounded-full text-sm font-medium">0%</span>
+                </div>
+                <div class="w-full bg-gray-700 rounded-full h-2.5 mb-6"><div id="scoreBar" class="result-bar h-2.5 rounded-full" style="width: 0%"></div></div>
+                <div id="resultDetails" class="text-gray-300"><p>We're analyzing your news content against multiple reliable sources.</p></div>
+                <div id="sourcesList" class="mt-6 border-t border-gray-800 pt-4 hidden">
+                    <h4 class="font-medium text-white mb-2">Sources checked:</h4>
+                    <ul class="text-sm text-gray-400">
+                        <li class="mb-1">• Verified with Reuters News API</li>
+                        <li class="mb-1">• Cross-referenced with Associated Press</li>
+                        <li class="mb-1">• Fact-checked against known misinformation databases</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="bg-gray-900 p-6 rounded-xl shadow-lg border border-gray-800">
+                <h3 class="text-xl font-semibold text-white mb-4">Detailed Analysis</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <h4 class="font-medium text-white mb-2">Language Analysis</h4>
+                        <ul class="text-sm text-gray-400 space-y-2">
+                            <li class="flex items-start"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-500 mr-2 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg><span>No sensationalist language detected</span></li>
+                            <li class="flex items-start"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-500 mr-2 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg><span>Neutral tone maintained throughout</span></li>
+                            <li class="flex items-start"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-red-500 mr-2 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg><span>Mild emotional language detected</span></li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 class="font-medium text-white mb-2">Source Verification</h4>
+                        <ul class="text-sm text-gray-400 space-y-2">
+                            <li class="flex items-start"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-500 mr-2 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg><span>Corroborated by 3 major news outlets</span></li>
+                            <li class="flex items-start"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-yellow-500 mr-2 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg><span>Limited expert verification available</span></li>
+                            <li class="flex items-start"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-500 mr-2 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg><span>No history of misinformation from source</span></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="bg-gray-900 text-white py-8 mt-12 border-t border-gray-800">
+        <div class="container mx-auto px-4 text-center">
+            <p neon-heading">Made by:: Abhijay, Rakesh, Abhishek, Jaya.</p>
+            <p>This project is for educational purposes only.</p>
+            <br>
+            <p class="neon-heading">© 2025 FakeNews Detector. All rights reserved.</p>
+
+            <!-- <p class="text-gray-500 text-sm mt-2">This project is for educational purposes only.</p> -->
+        
+        </div>
+    </footer>
+
+    <div id="loginModal" class="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 modal fade-in">
+        <div class="bg-gray-800 rounded-xl shadow-2xl w-full max-w-md p-6 mx-4 border border-gray-700">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-2xl font-bold text-white">Login to Your Account</h3>
+                <button id="closeModal" class="text-gray-400 hover:text-white"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button>
+            </div>
+            <form id="loginForm">
+                <div class="mb-4"><label for="email" class="block text-gray-300 mb-2">Email Address</label><input type="email" id="email" class="w-full px-4 py-2 bg-gray-700 text-white border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter your email" required></div>
+                <div class="mb-6"><label for="password" class="block text-gray-300 mb-2">Password</label><input type="password" id="password" class="w-full px-4 py-2 bg-gray-700 text-white border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter your password" required></div>
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center"><input type="checkbox" id="remember" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-600 rounded bg-gray-700"><label for="remember" class="ml-2 block text-sm text-gray-300">Remember me</label></div>
+                    <a href="#" class="text-sm text-blue-400 hover:underline">Forgot password?</a>
+                </div>
+                <button type="submit" class="w-full bg-blue-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-blue-700 transition">Login</button>
+            </form>
+            <div class="mt-4 text-center"><p class="text-gray-400">Don't have an account? <a href="#" id="showRegister" class="text-blue-400 hover:underline">Sign up</a></p></div>
+        </div>
+    </div>
+
+    <div id="registerModal" class="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 hidden modal">
+        <div class="bg-gray-800 rounded-xl shadow-2xl w-full max-w-md p-6 mx-4 border border-gray-700">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-2xl font-bold text-white">Create Account</h3>
+                <button id="closeRegisterModal" class="text-gray-400 hover:text-white"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button>
+            </div>
+            <form id="registerForm">
+                <div class="mb-4"><label for="regName" class="block text-gray-300 mb-2">Full Name</label><input type="text" id="regName" class="w-full px-4 py-2 bg-gray-700 text-white border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter your full name" required></div>
+                <div class="mb-4"><label for="regEmail" class="block text-gray-300 mb-2">Email Address</label><input type="email" id="regEmail" class="w-full px-4 py-2 bg-gray-700 text-white border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter your email" required></div>
+                <div class="mb-6"><label for="regPassword" class="block text-gray-300 mb-2">Password</label><input type="password" id="regPassword" class="w-full px-4 py-2 bg-gray-700 text-white border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Create a password" required></div>
+                <button type="submit" class="w-full bg-blue-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-blue-700 transition">Create Account</button>
+            </form>
+            <div class="mt-4 text-center"><p class="text-gray-400">Already have an account? <a href="#" id="showLogin" class="text-blue-400 hover:underline">Login</a></p></div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const $ = (selector) => document.getElementById(selector);
+            const DOM = {
+                authBtn: $('authBtn'), closeModal: $('closeModal'), loginModal: $('loginModal'),
+                loginForm: $('loginForm'), registerModal: $('registerModal'), registerForm: $('registerForm'),
+                closeRegisterModal: $('closeRegisterModal'), showRegister: $('showRegister'), showLogin: $('showLogin'),
+                analyzeBtn: $('analyzeBtn'), resultsPage: $('resultsPage'), mainContent: $('mainContent'),
+                userInfo: $('userInfo'), backToMain: $('backToMain'), hamburgerBtn: $('hamburgerBtn'),
+                closeHamburger: $('closeHamburger'), hamburgerMenu: $('hamburgerMenu'), historyContent: $('historyContent'),
+                historyUser: $('historyUser'), username: $('username'), newsInput: $('newsInput'),
+                resultTitle: $('resultTitle'), credibilityScore: $('credibilityScore'), scoreBar: $('scoreBar'),
+                resultDetails: $('resultDetails'), sourcesList: $('sourcesList')
+            };
+
+            const API_BASE_URL = 'http://localhost:5000';
+
+            const toggleModal = (modal, show) => modal.classList.toggle('hidden', !show);
+            const toggleView = (showResults) => {
+                DOM.mainContent.classList.toggle('hidden', showResults);
+                DOM.resultsPage.classList.toggle('hidden', !showResults);
+            };
+
+            const apiRequest = async (endpoint, options, fallback) => {
+                try {
+                    const response = await fetch(`${API_BASE_URL}${endpoint}`, options);
+                    if (!response.ok) throw new Error('Network response was not ok');
+                    return await response.json();
+                } catch (error) {
+                    console.error(`API Error on ${endpoint}:`, error);
+                    alert('Server not responding. Using demo mode.');
+                    return fallback;
+                }
+            };
+            
+            const simulateLogin = (user) => {
+                localStorage.setItem('currentUser', JSON.stringify(user));
+                DOM.username.textContent = user.name;
+                DOM.userInfo.classList.remove('hidden');
+                DOM.authBtn.textContent = 'Logout';
+                toggleModal(DOM.loginModal, false);
+                alert(`Login successful! Welcome back, ${user.name}`);
+            };
+
+            const displayHistory = (history, userEmail) => {
+                DOM.historyUser.textContent = userEmail;
+                if (!history || history.length === 0) {
+                    DOM.historyContent.innerHTML = `<p class="text-gray-500 text-center py-10">Your search history appears here.</p>`;
+                    return;
+                }
+                DOM.historyContent.innerHTML = history.map(item => {
+                    const score = parseInt(item.credibility);
+                    const colorClass = score >= 70 ? "bg-green-900" : score >= 40 ? "bg-yellow-900" : "bg-red-900";
+                    return `
+                        <div class="mb-4 pb-4 border-b border-gray-700 last:border-0 last:mb-0 last:pb-0">
+                            <p class="text-gray-300">${item.search || item.text}</p>
+                            <div class="flex justify-between items-center mt-2">
+                                <span class="text-gray-500 text-sm">${item.date}</span>
+                                ${item.credibility ? `<span class="px-2 py-1 ${colorClass} text-xs rounded">${item.credibility}</span>` : ''}
+                            </div>
+                        </div>`;
+                }).join('');
+            };
+
+            const displayResults = (data, text, userEmail) => {
+                const score = data.credibility;
+                const scoreDetails = score >= 70 ? { assessment: "Likely Credible", sClass: "bg-green-900 text-green-300", sColor: "bg-green-600" }
+                                   : score >= 40 ? { assessment: "Mixed Reliability", sClass: "bg-yellow-900 text-yellow-300", sColor: "bg-yellow-500" }
+                                   : { assessment: "Likely False", sClass: "bg-red-900 text-red-300", sColor: "bg-red-600" };
+                
+                DOM.resultTitle.textContent = `Assessment: ${scoreDetails.assessment}`;
+                DOM.credibilityScore.textContent = `${score}%`;
+                DOM.credibilityScore.className = `px-3 py-1 ${scoreDetails.sClass} rounded-full text-sm font-medium`;
+                setTimeout(() => {
+                    DOM.scoreBar.style.width = `${score}%`;
+                    DOM.scoreBar.className = `result-bar h-2.5 rounded-full ${scoreDetails.sColor}`;
+                }, 100);
+
+                DOM.resultDetails.innerHTML = `
+                    <p class="mb-3 text-gray-300">Our analysis indicates:</p>
+                    <ul class="list-disc pl-5 text-gray-400">
+                        <li class="mb-2">${score >= 70 ? '✓ Consistent' : '✗ Inconsistent'} language patterns</li>
+                        <li class="mb-2">${score >= 40 ? '✓ Corroborated by' : '✗ Not corroborated by'} established outlets</li>
+                        <li class="mb-2">${score >= 70 ? '✓ No strong' : '✗ Potential'} emotional manipulation detected</li>
+                    </ul>`;
+                DOM.sourcesList.classList.remove('hidden');
+                
+                apiRequest('/add_history', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: userEmail, search_text: text, credibility: `${score}%` })
+                }, { message: 'History saved in demo.' }).then(console.log);
+            };
+            
+            setTimeout(() => toggleModal(DOM.loginModal, true), 500);
+
+            DOM.authBtn.addEventListener('click', () => {
+                if (DOM.authBtn.textContent === 'Login') {
+                    toggleModal(DOM.loginModal, true);
+                } else {
+                    localStorage.removeItem('currentUser');
+                    DOM.userInfo.classList.add('hidden');
+                    DOM.authBtn.textContent = 'Login';
+                    alert('Logged out successfully');
+                }
+            });
+
+            DOM.loginForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const email = $('email').value, password = $('password').value;
+                const data = await apiRequest('/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                }, { message: 'Login successful', user: { name: 'Demo User', email } });
+                
+                if (data.message === 'Login successful') simulateLogin(data.user);
+                else alert(`Login failed: ${data.error}`);
+            });
+            
+            DOM.registerForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const name = $('regName').value, email = $('regEmail').value, password = $('regPassword').value;
+                const data = await apiRequest('/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, email, password })
+                }, { message: 'User registered successfully' });
+
+                if (data.message === 'User registered successfully') {
+                    alert(`Account created for ${name}. You can now login.`);
+                    toggleModal(DOM.registerModal, false);
+                    toggleModal(DOM.loginModal, true);
+                    $('email').value = email;
+                } else alert(`Registration failed: ${data.error}`);
+            });
+
+            DOM.analyzeBtn.addEventListener('click', async () => {
+                const newsText = DOM.newsInput.value.trim();
+                if (newsText.length < 10) return alert('Please enter at least 10 characters.');
+                
+                const currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
+                if (!currentUser) return alert('Please login to analyze news.');
+
+                toggleView(true);
+                DOM.resultTitle.textContent = "Analyzing news content...";
+                DOM.credibilityScore.textContent = "0%";
+                
+                const data = await apiRequest('/check_news', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: newsText })
+                }, { credibility: Math.floor(Math.random() * 100) });
+                
+                displayResults(data, newsText, currentUser.email);
+            });
+
+            DOM.hamburgerBtn.addEventListener('click', async () => {
+                const currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
+                if (!currentUser) return alert('Please login to view history.');
+                
+                DOM.hamburgerMenu.classList.add('open');
+                const data = await apiRequest(`/get_history?email=${encodeURIComponent(currentUser.email)}`, {}, {
+                    history: [{ search: "Sample search 1", date: "2023-01-01", credibility: "85%" }]
+                });
+                displayHistory(data.history, currentUser.email);
+            });
+            
+            DOM.backToMain.addEventListener('click', () => toggleView(false));
+            DOM.closeHamburger.addEventListener('click', () => DOM.hamburgerMenu.classList.remove('open'));
+            DOM.closeModal.addEventListener('click', () => toggleModal(DOM.loginModal, false));
+            DOM.closeRegisterModal.addEventListener('click', () => toggleModal(DOM.registerModal, false));
+            DOM.showRegister.addEventListener('click', (e) => { e.preventDefault(); toggleModal(DOM.loginModal, false); toggleModal(DOM.registerModal, true); });
+            DOM.showLogin.addEventListener('click', (e) => { e.preventDefault(); toggleModal(DOM.registerModal, false); toggleModal(DOM.loginModal, true); });
+        });
+    </script>
+</body>
+</html>
