@@ -4,372 +4,650 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TruthCheck - Fake News Detector</title>
+    <title>TruthFort - Verify Claims</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        @keyframes cyberpunk {
+        @keyframes gradient {
             0% { background-position: 0% 50%; }
             50% { background-position: 100% 50%; }
             100% { background-position: 0% 50%; }
         }
 
         @keyframes float {
-            0% { transform: translateY(0px); }
-            50% { transform: translateY(-10px); }
-            100% { transform: translateY(0px); }
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
         }
 
-        @keyframes flicker {
-            0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% {
-                opacity: 1;
-                text-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 20px #8b5cf6, 0 0 40px #8b5cf6;
-            }
-            20%, 24%, 55% {
-                opacity: 0.8;
-                text-shadow: none;
-            }
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 20px rgba(34, 211, 238, 0.4); }
+            50% { box-shadow: 0 0 40px rgba(34, 211, 238, 0.8); }
+        }
+
+        @keyframes shimmer {
+            0% { background-position: -1000px 0; }
+            100% { background-position: 1000px 0; }
+        }
+
+        .gradient-bg {
+            background: linear-gradient(-45deg, #0a0f1e, #1a1f3a, #0f2027, #203a43);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+        }
+
+        .glow-text {
+            text-shadow: 0 0 10px rgba(34, 211, 238, 0.5);
+        }
+
+        .feature-card {
+            transition: all 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(34, 211, 238, 0.3);
+        }
+
+        .shimmer-effect {
+            background: linear-gradient(90deg, transparent, rgba(34, 211, 238, 0.1), transparent);
+            background-size: 1000px 100%;
+            animation: shimmer 3s infinite;
         }
     </style>
 </head>
 
-<body class="bg-black min-h-screen flex items-center justify-center p-4 overflow-hidden">
+<body class="gradient-bg min-h-screen">
     
-    <!-- Login Modal (shows first) -->
-    <div id="loginModal" class="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50">
-        <div class="relative p-0.5 rounded-xl" style="background: linear-gradient(45deg, #6366f1, #8b5cf6, #ec4899, #f43f5e); background-size: 300% 300%; animation: cyberpunk 6s ease infinite;">
-            <div class="bg-gray-900 rounded-xl p-8 max-w-md w-full mx-4">
-                <div class="text-center mb-6">
-                    <h2 class="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400 mb-2">Welcome to NewsCheck</h2>
-                    <p class="text-gray-400">Please login to continue</p>
+    <!-- Animated Background Elements -->
+    <div class="fixed inset-0 overflow-hidden pointer-events-none">
+        <div class="absolute top-1/4 left-1/4 w-64 h-64 rounded-full bg-blue-900 opacity-10 blur-3xl animate-pulse"></div>
+        <div class="absolute bottom-1/3 right-1/3 w-80 h-80 rounded-full bg-green-900 opacity-10 blur-3xl animate-pulse" style="animation-delay: 2s;"></div>
+        <div class="absolute top-1/2 right-1/4 w-72 h-72 rounded-full bg-cyan-900 opacity-10 blur-3xl animate-pulse" style="animation-delay: 4s;"></div>
+    </div>
+
+    <!-- Pricing Plans Modal -->
+    <div id="pricingModal" class="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50 p-4" style="display: none;">
+        <div class="relative">
+            <div class="absolute inset-0 bg-gradient-to-r from-cyan-500 via-blue-500 to-green-500 rounded-2xl opacity-50 blur-xl"></div>
+            <div class="relative bg-gray-900 rounded-2xl p-8 max-w-4xl w-full border border-cyan-900 shadow-2xl">
+                <button onclick="closePricing()" class="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors">
+                    <i class="fas fa-times text-2xl"></i>
+                </button>
+                
+                <div class="text-center mb-8">
+                    <div class="inline-block bg-gradient-to-r from-cyan-600 to-blue-600 w-16 h-16 rounded-full flex items-center justify-center mb-4">
+                        <i class="fas fa-crown text-3xl text-white"></i>
+                    </div>
+                    <h2 class="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-green-400 mb-2">
+                        Premium Plans
+                    </h2>
+                    <p class="text-gray-400">Unlock unlimited verifications and premium features</p>
                 </div>
                 
-                <form id="loginForm" onsubmit="handleLogin(event)">
-                    <div class="mb-4">
-                        <label class="block text-gray-300 mb-2">Email:</label>
-                        <input type="email" id="email" required
-                               class="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg focus:ring-2 focus:ring-purple-500 text-gray-200">
+                <div class="grid md:grid-cols-3 gap-6 mb-6">
+                    <!-- 1 Month Plan -->
+                    <div class="bg-gray-800 bg-opacity-50 backdrop-blur-sm rounded-xl p-6 border-2 border-blue-500 hover:border-cyan-400 transition-all duration-300 transform hover:scale-105">
+                        <h3 class="text-2xl font-bold text-white mb-2">1 Month</h3>
+                        <div class="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400 mb-1">₹20</div>
+                        <p class="text-gray-400 text-sm mb-4">per month</p>
+                        <ul class="text-gray-300 space-y-3 mb-6">
+                            <li class="flex items-center"><i class="fas fa-check text-green-400 mr-3"></i>200 Verifications</li>
+                            <li class="flex items-center"><i class="fas fa-check text-green-400 mr-3"></i>Priority Support</li>
+                            <li class="flex items-center"><i class="fas fa-check text-green-400 mr-3"></i>No Advertisements</li>
+                            <li class="flex items-center"><i class="fas fa-check text-green-400 mr-3"></i>Detailed Analytics</li>
+                        </ul>
+                        <button onclick="selectPlan(20, '1 Month')" 
+                                class="w-full bg-gradient-to-r from-blue-600 to-cyan-600 text-white py-3 rounded-lg hover:from-blue-500 hover:to-cyan-500 transition-all duration-300 font-semibold">
+                            View Details
+                        </button>
                     </div>
                     
-                    <div class="mb-6">
-                        <label class="block text-gray-300 mb-2">Password:</label>
-                        <input type="password" id="password" required
-                               class="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg focus:ring-2 focus:ring-purple-500 text-gray-200">
+                    <!-- 6 Months Plan (Popular) -->
+                    <div class="bg-gray-800 bg-opacity-50 backdrop-blur-sm rounded-xl p-6 border-2 border-cyan-500 hover:border-green-400 transition-all duration-300 transform scale-105 relative">
+                        <div class="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                            <span class="bg-gradient-to-r from-cyan-500 to-green-500 text-white px-4 py-1 rounded-full text-sm font-bold shadow-lg">
+                                ⭐POPULAR
+                            </span>
+                        </div>
+                        <h3 class="text-2xl font-bold text-white mb-2 mt-2">6 Months</h3>
+                        <div class="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-green-400 mb-1">₹18</div>
+                        <p class="text-gray-400 text-sm mb-4">per month (₹108 total)</p>
+                        <ul class="text-gray-300 space-y-3 mb-6">
+                            <li class="flex items-center"><i class="fas fa-check text-green-400 mr-3"></i>Unlimited Verifications</li>
+                            <li class="flex items-center"><i class="fas fa-check text-green-400 mr-3"></i>Priority Support</li>
+                            <li class="flex items-center"><i class="fas fa-check text-green-400 mr-3"></i>No Advertisements</li>
+                            <li class="flex items-center"><i class="fas fa-star text-yellow-400 mr-3"></i>Save 10%</li>
+                        </ul>
+                        <button onclick="selectPlan(108, '6 Months')" 
+                                class="w-full bg-gradient-to-r from-cyan-600 to-green-600 text-white py-3 rounded-lg hover:from-cyan-500 hover:to-green-500 transition-all duration-300 font-semibold shadow-lg">
+                            View Details
+                        </button>
                     </div>
                     
-                    <button type="submit" 
-                            class="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white py-3 rounded-lg hover:from-purple-500 hover:to-pink-500 transition-all duration-300 mb-3">
-                        Login
-                    </button>
-                    
-                    <button type="button" onclick="showRegister()" 
-                            class="w-full bg-gray-800 text-gray-300 py-2 rounded-lg border border-gray-700 hover:bg-gray-700 transition-all duration-300">
-                        New User? Register
-                    </button>
-                </form>
+                    <!-- 1 Year Plan -->
+                    <div class="bg-gray-800 bg-opacity-50 backdrop-blur-sm rounded-xl p-6 border-2 border-green-500 hover:border-cyan-400 transition-all duration-300 transform hover:scale-105">
+                        <h3 class="text-2xl font-bold text-white mb-2">1 Year</h3>
+                        <div class="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-blue-400 mb-1">₹15</div>
+                        <p class="text-gray-400 text-sm mb-4">per month (₹180 total)</p>
+                        <ul class="text-gray-300 space-y-3 mb-6">
+                            <li class="flex items-center"><i class="fas fa-check text-green-400 mr-3"></i>Unlimited Verifications</li>
+                            <li class="flex items-center"><i class="fas fa-check text-green-400 mr-3"></i>Priority Support</li>
+                            <li class="flex items-center"><i class="fas fa-check text-green-400 mr-3"></i>No Advertisements</li>
+                            <li class="flex items-center"><i class="fas fa-star text-yellow-400 mr-3"></i>Save 25%</li>
+                        </ul>
+                        <button onclick="selectPlan(180, '1 Year')" 
+                                class="w-full bg-gradient-to-r from-green-600 to-blue-600 text-white py-3 rounded-lg hover:from-green-500 hover:to-blue-500 transition-all duration-300 font-semibold">
+                            View Details
+                        </button>
+                    </div>
+                </div>
                 
-                <!-- Register Form (hidden initially) -->
-                <form id="registerForm" onsubmit="handleRegister(event)" style="display: none;">
-                    <div class="mb-4">
-                        <label class="block text-gray-300 mb-2">Email:</label>
-                        <input type="email" id="regEmail" required
-                               class="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg focus:ring-2 focus:ring-purple-500 text-gray-200">
+                <div id="billingInfo" class="bg-gray-800 bg-opacity-70 backdrop-blur-sm rounded-xl p-6 border border-cyan-700" style="display: none;">
+                    <h3 class="text-2xl font-bold text-white mb-4 text-center">Plan Details</h3>
+                    <div class="text-center mb-4">
+                        <p class="text-gray-300 mb-2">Selected Plan: <span id="selectedPlan" class="text-cyan-400 font-bold text-xl"></span></p>
+                        <p class="text-gray-300">Total Amount: <span id="billingAmount" class="text-green-400 font-bold text-2xl"></span></p>
                     </div>
-                    
-                    <div class="mb-6">
-                        <label class="block text-gray-300 mb-2">Password:</label>
-                        <input type="password" id="regPassword" required
-                               class="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg focus:ring-2 focus:ring-purple-500 text-gray-200">
+                    <div class="bg-yellow-900 bg-opacity-30 border border-yellow-600 rounded-lg p-4 mb-4">
+                        <p class="text-yellow-300 text-sm text-center">
+                            <i class="fas fa-info-circle mr-2"></i>
+                            This is a preview. Payment processing is not activated right now!
+                        </p>
                     </div>
-                    
-                    <button type="submit" 
-                            class="w-full bg-gradient-to-r from-green-600 to-blue-600 text-white py-3 rounded-lg hover:from-green-500 hover:to-blue-500 transition-all duration-300 mb-3">
-                        Register
+                    <button onclick="closePricing()" 
+                            class="w-full bg-gradient-to-r from-gray-700 to-gray-600 text-white py-3 rounded-lg hover:from-gray-600 hover:to-gray-500 transition-all duration-300 font-semibold">
+                        Close
                     </button>
-                    
-                    <button type="button" onclick="showLogin()" 
-                            class="w-full bg-gray-800 text-gray-300 py-2 rounded-lg border border-gray-700 hover:bg-gray-700 transition-all duration-300">
-                        Back to Login
-                    </button>
-                </form>
+                </div>
             </div>
         </div>
     </div>
     
-    <!-- Subscribe Button (top right corner) -->
-    <button id="subscribeBtn" onclick="handleSubscribe()" 
-            class="fixed top-4 right-4 bg-gradient-to-r from-yellow-500 to-orange-500 text-white px-4 py-2 rounded-full hover:from-yellow-400 hover:to-orange-400 transition-all duration-300 z-40 shadow-lg" 
-            style="display: none;">
-        <i class="fas fa-crown mr-2"></i>
-        <span id="subscribeBtnText">Subscribe</span>
-    </button>
-    
-    <!-- User Info (top left corner) -->
-    <div id="userInfo" class="fixed top-4 left-4 text-white z-40" style="display: none;">
-        <span class="bg-gray-800 px-3 py-1 rounded-full text-sm">
-            <i class="fas fa-user mr-2"></i>
-            <span id="userEmail"></span>
-            <span id="userStatus" class="ml-2 px-2 py-1 rounded-full text-xs bg-purple-600">Free</span>
-        </span>
-    </div>
-    
-    <!-- Animated background elements -->
-    <div class="fixed inset-0 overflow-hidden pointer-events-none">
-        <div class="absolute top-1/4 left-1/4 w-32 h-32 rounded-full bg-purple-900 opacity-20 blur-3xl animate-pulse"></div>
-        <div class="absolute bottom-1/3 right-1/3 w-40 h-40 rounded-full bg-indigo-900 opacity-20 blur-3xl animate-pulse delay-300"></div>
-        <div class="absolute top-1/3 right-1/4 w-28 h-28 rounded-full bg-blue-900 opacity-20 blur-3xl animate-pulse delay-700"></div>
-    </div>
-
-    <!-- Main Content (hidden initially) -->
-    <div id="mainContent" class="w-full max-w-2xl relative z-10" style="display: none;">
-        <div class="relative p-0.5 rounded-xl mb-8" style="background: linear-gradient(45deg, #6366f1, #8b5cf6, #ec4899, #f43f5e); background-size: 300% 300%; animation: cyberpunk 6s ease infinite;">
-            <div class="bg-gray-900 rounded-xl overflow-hidden backdrop-blur-sm bg-opacity-80 border border-gray-800">
+    <!-- Top Navigation Bar -->
+    <div class="fixed top-0 left-0 right-0 z-40 bg-gray-900 bg-opacity-80 backdrop-blur-md border-b border-gray-800">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+            <!-- Logo -->
+            <div class="flex items-center">
+                <i class="fas fa-shield-alt text-2xl text-cyan-400 mr-3"></i>
+                <h1 class="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400">TruthFort</h1>
+            </div>
+            
+            <!-- User Info & Actions -->
+            <div class="flex items-center gap-4">
+                <!-- Usage Counter -->
+                <div id="usageCounter" class="bg-yellow-900 bg-opacity-40 border border-yellow-600 px-4 py-2 rounded-full text-sm hidden">
+                    <i class="fas fa-exclamation-triangle text-yellow-400 mr-2"></i>
+                    <span class="text-yellow-300"><span id="usageCount">5</span> checks left</span>
+                </div>
                 
-                <!-- Header with flickering neon text -->
-                <div class="bg-gradient-to-r from-gray-900 to-gray-800 p-6 border-b border-gray-800">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <h1 class="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400 mb-1">NewsCheck</h1>
-                            <p class="text-gray-400">AI-Powered News Verification</p>
-                        </div>
-                        <i class="fas fa-shield-alt text-3xl text-purple-400" style="animation: float 4s ease-in-out infinite;"></i>
+                <!-- Session Timer -->
+                <div class="bg-blue-900 bg-opacity-40 border border-blue-600 px-4 py-2 rounded-full text-sm">
+                    <i class="fas fa-clock text-blue-400 mr-2"></i>
+                    <span class="text-blue-300" id="timerDisplay">15:00</span>
+                </div>
+                
+                <!-- User Email & Status -->
+                <div class="bg-gray-800 px-4 py-2 rounded-full text-sm flex items-center gap-2">
+                    <i class="fas fa-user text-gray-400"></i>
+                    <span class="text-gray-300" id="userEmail"></span>
+                    <span id="userStatus" class="px-2 py-1 rounded-full text-xs bg-blue-600 text-white">Free</span>
+                </div>
+                
+                <!-- Pricing Button -->
+                <button onclick="showPricing()" 
+                        class="bg-gradient-to-r from-cyan-600 to-blue-600 text-white px-4 py-2 rounded-full hover:from-cyan-500 hover:to-blue-500 transition-all duration-300 font-medium shadow-lg flex items-center">
+                    <i class="fas fa-crown mr-2"></i>
+                    <span class="hidden sm:inline">Upgrade</span>
+                </button>
+                
+                <!-- Logout Button -->
+                <button onclick="logout()" 
+                        class="bg-red-600 hover:bg-red-500 text-white px-4 py-2 rounded-full transition-all duration-300 font-medium flex items-center"
+                        title="Logout">
+                    <i class="fas fa-sign-out-alt mr-2"></i>
+                    <span class="hidden sm:inline">Logout</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="pt-24 pb-12 px-4">
+        <div class="max-w-6xl mx-auto">
+            
+            <!-- Hero Section -->
+            <div class="text-center mb-12">
+                <div class="inline-block mb-6">
+                    <div class="relative">
+                        <div class="absolute inset-0 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full opacity-50 blur-2xl"></div>
+                        <i class="relative fas fa-shield-alt text-6xl text-cyan-400" style="animation: float 4s ease-in-out infinite;"></i>
                     </div>
                 </div>
+                <h1 class="text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-400 to-green-400 mb-4 glow-text">
+                    Verify News Claims Instantly
+                </h1>
+                <p class="text-xl text-gray-300 max-w-2xl mx-auto">
+                    Leverage AI-powered analysis to fact-check any news statement against 100+ verified sources
+                </p>
+            </div>
 
-                <!-- Usage Counter for Free Users -->
-                <div id="usageCounter" class="bg-yellow-900 bg-opacity-50 p-3 border-b border-gray-800" style="display: none;">
-                    <p class="text-yellow-300 text-sm text-center">
-                        <i class="fas fa-exclamation-triangle mr-2"></i>
-                        Free User: <span id="usageCount">5</span> checks remaining today
-                    </p>
-                </div>
-
-                <!-- Form -->
-                <form method="POST" action="http://localhost:8000/verify" class="p-6" target="_blank" onsubmit="return checkUsage()">
-                    <input type="hidden" id="userEmailHidden" name="user_email" value="">
-                    
-                    <div class="mb-6">
-                        <label class="block text-gray-300 mb-3 font-medium flex items-center">
-                            <i class="fas fa-question-circle mr-2 text-purple-400"></i>
-                            Enter a statement to verify:
-                        </label>
-                        <div class="relative group">
-                            <div class="absolute inset-0 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg opacity-0 group-hover:opacity-20 transition-all duration-300 blur-sm"></div>
-                            <input type="text" name="claim" id="claimInput" placeholder="E.g. 'Is the Earth flat?'"
-                                class="relative w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-gray-200 placeholder-gray-500 pr-10 transition-all duration-200 group-hover:border-purple-400"
-                                required>
-                            <button type="button" onclick="pasteFromClipboard()"
-                                class="absolute right-2 top-2 text-gray-500 hover:text-purple-300 transition-all duration-200 hover:scale-110"
-                                title="Paste from clipboard">
-                                <i class="fas fa-paste"></i>
-                            </button>
+            <!-- Main Verification Card -->
+            <div class="mb-8">
+                <div class="relative">
+                    <div class="absolute inset-0 bg-gradient-to-r from-cyan-500 via-blue-500 to-green-500 rounded-2xl opacity-30 blur-xl"></div>
+                    <div class="relative bg-gray-900 bg-opacity-70 backdrop-blur-md rounded-2xl border border-cyan-900 shadow-2xl overflow-hidden">
+                        
+                        <!-- Shimmer Effect -->
+                        <div class="absolute inset-0 shimmer-effect pointer-events-none"></div>
+                        
+                        <div class="p-8">
+                            <form id="verifyForm" onsubmit="handleVerify(event)">
+                                <input type="hidden" id="userEmailHidden" name="user_email" value="">
+                                
+                                <div class="mb-6">
+                                    <label class="block text-gray-300 mb-4 font-medium text-lg flex items-center">
+                                        <i class="fas fa-search mr-3 text-cyan-400"></i>
+                                        Enter a news statement to verify:
+                                    </label>
+                                    <div class="relative group">
+                                        <textarea 
+                                            id="claimInput" 
+                                            rows="4"
+                                            placeholder="E.g., 'NASA discovered water on Mars' or 'Is the Earth flat?'"
+                                            class="w-full px-6 py-4 bg-gray-800 border-2 border-gray-700 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 text-gray-200 placeholder-gray-500 transition-all duration-200 resize-none text-lg"
+                                            required></textarea>
+                                        <button type="button" onclick="pasteFromClipboard()"
+                                            class="absolute right-4 top-4 text-gray-500 hover:text-cyan-400 transition-all duration-200 hover:scale-110"
+                                            title="Paste from clipboard">
+                                            <i class="fas fa-paste text-xl"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <button type="submit"
+                                    class="w-full bg-gradient-to-r from-cyan-600 via-blue-600 to-green-600 text-white py-4 px-6 rounded-xl hover:from-cyan-500 hover:via-blue-500 hover:to-green-500 transition-all duration-300 font-semibold text-lg shadow-lg hover:shadow-2xl transform hover:scale-[1.02] group">
+                                    <span class="flex items-center justify-center">
+                                        <i class="fas fa-search mr-3 group-hover:animate-pulse"></i>
+                                        <span>Verify This Claim Now</span>
+                                        <i class="fas fa-arrow-right ml-3 opacity-0 group-hover:opacity-100 transition-all duration-300 transform -translate-x-2 group-hover:translate-x-0"></i>
+                                    </span>
+                                </button>
+                            </form>
                         </div>
                     </div>
-                    <button type="submit"
-                        class="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white py-3 px-4 rounded-lg hover:from-purple-500 hover:to-pink-500 transition-all duration-300 font-medium shadow-lg hover:shadow-xl flex items-center justify-center transform hover:scale-[1.02] group">
-                        <span class="group-hover:animate-pulse">
-                            <i class="fas fa-search mr-2"></i>
-                            Verify Claim
-                        </span>
-                        <i class="fas fa-arrow-right ml-2 opacity-0 group-hover:opacity-100 transition-all duration-300 transform -translate-x-1 group-hover:translate-x-0"></i>
-                    </button>
-                </form>
+                </div>
+            </div>
 
+            <!-- Results Section -->
+            <div id="resultsSection" style="display: none;" class="mb-8">
+                <div class="relative">
+                    <div class="absolute inset-0 bg-gradient-to-r from-green-500 via-cyan-500 to-blue-500 rounded-2xl opacity-20 blur-xl"></div>
+                    <div class="relative bg-gray-900 bg-opacity-70 backdrop-blur-md rounded-2xl border border-cyan-900 shadow-2xl p-8">
+                        <h2 class="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-green-400 mb-6 flex items-center">
+                            <i class="fas fa-chart-line mr-3"></i>
+                            Verification Results
+                        </h2>
+                        <div id="resultsContent"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Info Grid -->
+            <div class="grid md:grid-cols-3 gap-6 mb-8">
                 <!-- How It Works -->
-                <div class="border-t border-gray-800 p-6 bg-gray-900 bg-opacity-70">
-                    <h2 class="font-bold text-gray-300 mb-4 flex items-center">
-                        <i class="fas fa-cogs mr-2 text-purple-400"></i>
-                        How It Works:
-                    </h2>
-                    <ul class="space-y-4">
-                        <li class="flex items-start bg-gray-800 p-4 rounded-lg border border-gray-700 hover:border-purple-500 transition-all duration-300 group">
-                            <span class="bg-gradient-to-br from-purple-500 to-pink-500 text-white rounded-full p-2 mr-3 group-hover:animate-pulse">
-                                <i class="fas fa-keyboard text-sm"></i>
-                            </span>
-                            <div>
-                                <h3 class="font-medium text-gray-200">Enter Your Claim</h3>
-                                <p class="text-sm text-gray-400">Type or paste any news statement</p>
-                            </div>
-                            <i class="fas fa-chevron-right ml-auto text-gray-500 group-hover:text-purple-400 transition-all duration-300"></i>
+                <div class="feature-card bg-gray-900 bg-opacity-70 backdrop-blur-sm rounded-xl p-6 border border-blue-900">
+                    <div class="bg-gradient-to-br from-blue-600 to-cyan-600 w-12 h-12 rounded-lg flex items-center justify-center mb-4">
+                        <i class="fas fa-cogs text-white text-xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white mb-3">How It Works</h3>
+                    <ul class="text-gray-300 space-y-2 text-sm">
+                        <li class="flex items-start">
+                            <i class="fas fa-check-circle text-cyan-400 mr-2 mt-1"></i>
+                            <span>Enter your news claim</span>
                         </li>
-                        <li class="flex items-start bg-gray-800 p-4 rounded-lg border border-gray-700 hover:border-purple-500 transition-all duration-300 group">
-                            <span class="bg-gradient-to-br from-purple-500 to-pink-500 text-white rounded-full p-2 mr-3 group-hover:animate-pulse">
-                                <i class="fas fa-brain text-sm"></i>
-                            </span>
-                            <div>
-                                <h3 class="font-medium text-gray-200">AI Analysis</h3>
-                                <p class="text-sm text-gray-400">Advanced NLP checks news sources</p>
-                            </div>
-                            <i class="fas fa-chevron-right ml-auto text-gray-500 group-hover:text-purple-400 transition-all duration-300"></i>
+                        <li class="flex items-start">
+                            <i class="fas fa-check-circle text-cyan-400 mr-2 mt-1"></i>
+                            <span>AI analyzes 100+ sources</span>
                         </li>
-                        <li class="flex items-start bg-gray-800 p-4 rounded-lg border border-gray-700 hover:border-purple-500 transition-all duration-300 group">
-                            <span class="bg-gradient-to-br from-purple-500 to-pink-500 text-white rounded-full p-2 mr-3 group-hover:animate-pulse">
-                                <i class="fas fa-chart-line text-sm"></i>
-                            </span>
-                            <div>
-                                <h3 class="font-medium text-gray-200">Get Results</h3>
-                                <p class="text-sm text-gray-400">Truth score with confidence %</p>
-                            </div>
-                            <i class="fas fa-chevron-right ml-auto text-gray-500 group-hover:text-purple-400 transition-all duration-300"></i>
+                        <li class="flex items-start">
+                            <i class="fas fa-check-circle text-cyan-400 mr-2 mt-1"></i>
+                            <span>Get instant verification</span>
                         </li>
                     </ul>
                 </div>
-            </div>
-        </div>
 
-        <!-- Team Credits -->
-        <div class="mt-10 text-center">
-            <div class="inline-block bg-gray-900 rounded-full px-6 py-3 border border-gray-800 shadow-lg hover:border-purple-500 transition-all duration-300 group">
-                <span class="text-gray-400 mr-2 group-hover:text-purple-300 transition-all duration-300">Developers: </span>
-                <div class="inline-flex space-x-2">
-                    <span class="bg-gradient-to-r from-purple-900 to-purple-700 text-purple-300 px-3 py-1 rounded-full text-xs font-mono tracking-wider">Abhijay Chauhan</span>
-                    <span class="bg-gradient-to-r from-pink-900 to-pink-700 text-pink-300 px-3 py-1 rounded-full text-xs font-mono tracking-wider">Rakesh Singh</span>
-                    <span class="bg-gradient-to-r from-blue-900 to-blue-700 text-blue-300 px-3 py-1 rounded-full text-xs font-mono tracking-wider">Jaya Maurya</span>
-                    <span class="bg-gradient-to-r from-indigo-900 to-indigo-700 text-indigo-300 px-3 py-1 rounded-full text-xs font-mono tracking-wider">Abhishek Kushwaha</span>
+                <!-- Why Trust Us -->
+                <div class="feature-card bg-gray-900 bg-opacity-70 backdrop-blur-sm rounded-xl p-6 border border-cyan-900">
+                    <div class="bg-gradient-to-br from-cyan-600 to-green-600 w-12 h-12 rounded-lg flex items-center justify-center mb-4">
+                        <i class="fas fa-shield-check text-white text-xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white mb-3">Why Trust Us</h3>
+                    <ul class="text-gray-300 space-y-2 text-sm">
+                        <li class="flex items-start">
+                            <i class="fas fa-check-circle text-green-400 mr-2 mt-1"></i>
+                            <span>95% accuracy rate</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fas fa-check-circle text-green-400 mr-2 mt-1"></i>
+                            <span>Advanced NLP technology</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fas fa-check-circle text-green-400 mr-2 mt-1"></i>
+                            <span>Real-time fact checking</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Premium Benefits -->
+                <div class="feature-card bg-gray-900 bg-opacity-70 backdrop-blur-sm rounded-xl p-6 border border-green-900">
+                    <div class="bg-gradient-to-br from-green-600 to-blue-600 w-12 h-12 rounded-lg flex items-center justify-center mb-4">
+                        <i class="fas fa-crown text-white text-xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white mb-3">Go Premium</h3>
+                    <ul class="text-gray-300 space-y-2 text-sm">
+                        <li class="flex items-start">
+                            <i class="fas fa-star text-yellow-400 mr-2 mt-1"></i>
+                            <span>Unlimited verifications</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fas fa-star text-yellow-400 mr-2 mt-1"></i>
+                            <span>Priority support 24/7</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fas fa-star text-yellow-400 mr-2 mt-1"></i>
+                            <span>Detailed analytics</span>
+                        </li>
+                    </ul>
+                    <button onclick="showPricing()" class="mt-4 w-full bg-gradient-to-r from-green-600 to-blue-600 text-white py-2 rounded-lg hover:from-green-500 hover:to-blue-500 transition-all duration-300 text-sm font-semibold">
+                        View Plans
+                    </button>
                 </div>
             </div>
+
+            <!-- Team Credits -->
+            <div class="text-center">
+                <div class="inline-block bg-gray-900 bg-opacity-70 backdrop-blur-sm rounded-full px-8 py-4 border border-cyan-900 shadow-lg hover:border-cyan-500 transition-all duration-300">
+                    <p class="text-gray-400 mb-2 text-sm">Developed by</p>
+                    <div class="flex flex-wrap justify-center gap-3">
+                        <span class="bg-gradient-to-r from-blue-900 to-blue-700 text-blue-300 px-4 py-2 rounded-full text-sm font-semibold">Abhijay Chauhan</span>
+                        <span class="bg-gradient-to-r from-cyan-900 to-cyan-700 text-cyan-300 px-4 py-2 rounded-full text-sm font-semibold">Rakesh Singh</span>
+                        <span class="bg-gradient-to-r from-green-900 to-green-700 text-green-300 px-4 py-2 rounded-full text-sm font-semibold">Jaya Maurya</span>
+                        <span class="bg-gradient-to-r from-blue-800 to-blue-600 text-blue-200 px-4 py-2 rounded-full text-sm font-semibold">Abhishek Kushwaha</span>
+                    </div>
+                </div>
+            </div>
+
         </div>
     </div>
 
     <script>
-        // Simple user data storage (in real app, this would be in backend)
+        // Check authentication on page load
         let currentUser = null;
-        let userUsageCount = 5; // Free users get 5 checks
+        let userUsageCount = 10;
+        let sessionTimer = null;
+        let sessionTimeLeft = 900; // 15 minutes
 
-        function handleLogin(event) {
-            event.preventDefault();
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
+        window.onload = function() {
+            const userData = sessionStorage.getItem('currentUser');
+            if (!userData) {
+                window.location.href = 'home.html';
+                return;
+            }
             
-            // Send login request to backend
-            fetch('http://localhost:8000/login', {
+            currentUser = JSON.parse(userData);
+            showMainApp();
+            startSessionTimer();
+        };
+
+        function handleVerify(event) {
+            event.preventDefault();
+            
+            if (currentUser.subscription !== 'Premium' && userUsageCount <= 0) {
+                alert('You have reached your daily limit! Upgrade to Premium for unlimited checks.');
+                showPricing();
+                return false;
+            }
+            
+            const claim = document.getElementById('claimInput').value.trim();
+            
+            if (!claim) {
+                alert('Please enter a statement to verify');
+                return false;
+            }
+            
+            document.getElementById('resultsSection').style.display = 'block';
+            document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth' });
+            document.getElementById('resultsContent').innerHTML = `
+                <div class="text-center py-12">
+                    <div class="relative inline-block">
+                        <div class="absolute inset-0 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full opacity-50 blur-xl animate-pulse"></div>
+                        <i class="relative fas fa-spinner fa-spin text-6xl text-cyan-400 mb-6"></i>
+                    </div>
+                    <p class="text-gray-200 text-xl font-semibold mb-2">Analyzing your claim...</p>
+                    <p class="text-gray-400">Cross-referencing with multiple news sources</p>
+                    <div class="mt-4 flex justify-center gap-2">
+                        <div class="w-2 h-2 bg-cyan-400 rounded-full animate-pulse"></div>
+                        <div class="w-2 h-2 bg-blue-400 rounded-full animate-pulse" style="animation-delay: 0.2s;"></div>
+                        <div class="w-2 h-2 bg-green-400 rounded-full animate-pulse" style="animation-delay: 0.4s;"></div>
+                    </div>
+                </div>
+            `;
+            
+            fetch('http://localhost:8000/verify', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password })
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({ 
+                    claim: claim,
+                    user_email: currentUser.email
+                })
             })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    currentUser = data.user;
-                    showMainApp();
-                } else {
-                    alert('Login failed: ' + data.message);
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
                 }
+                return response.json();
+            })
+            .then(data => {
+                if (data.error) {
+                    document.getElementById('resultsContent').innerHTML = `
+                        <div class="bg-red-900 bg-opacity-40 border-2 border-red-500 rounded-xl p-6 backdrop-blur-sm">
+                            <div class="flex items-center">
+                                <i class="fas fa-exclamation-circle text-4xl text-red-400 mr-4"></i>
+                                <div>
+                                    <h3 class="text-xl font-bold text-red-300 mb-2">Error</h3>
+                                    <p class="text-red-200">${data.error}</p>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                if (currentUser.subscription !== 'Premium') {
+                    userUsageCount--;
+                    updateUsageDisplay();
+                }
+                
+                displayResults(data);
             })
             .catch(error => {
-                console.error('Error:', error);
-                alert('Login error. Please try again.');
+                console.error('Fetch error:', error);
+                document.getElementById('resultsContent').innerHTML = `
+                    <div class="bg-red-900 bg-opacity-40 border-2 border-red-500 rounded-xl p-6 backdrop-blur-sm">
+                        <div class="flex items-start">
+                            <i class="fas fa-exclamation-triangle text-4xl text-red-400 mr-4 mt-1"></i>
+                            <div>
+                                <h3 class="text-xl font-bold text-red-300 mb-3">Connection Error</h3>
+                                <p class="text-red-200 mb-4">Unable to connect to the verification server.</p>
+                                <div class="bg-gray-800 rounded-lg p-4 text-sm">
+                                    <p class="text-gray-300 font-semibold mb-2">Possible solutions:</p>
+                                    <ul class="list-disc ml-5 text-gray-400 space-y-1">
+                                        <li>Ensure the Python backend is running on port 8000</li>
+                                        <li>Run: <code class="bg-gray-700 px-2 py-1 rounded text-cyan-300">python main.py</code></li>
+                                        <li>Check for "Server running" message in terminal</li>
+                                        <li>Verify your NewsAPI key in config.py</li>
+                                    </ul>
+                                </div>
+                                <p class="text-gray-400 text-xs mt-3">Error: ${error.message}</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
             });
-        }
-
-        function handleRegister(event) {
-            event.preventDefault();
-            const email = document.getElementById('regEmail').value;
-            const password = document.getElementById('regPassword').value;
             
-            // Send register request to backend
-            fetch('http://localhost:8000/register', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    alert('Registration successful! Please login.');
-                    showLogin();
-                } else {
-                    alert('Registration failed: ' + data.message);
+            return false;
+        }
+
+        function displayResults(result) {
+            let statusClass = '';
+            let statusIcon = '';
+            let statusBg = '';
+            
+            if (result.verification === 'Likely True') {
+                statusClass = 'from-green-900 to-emerald-900 border-green-500';
+                statusIcon = 'fa-check-circle';
+                statusBg = 'bg-gradient-to-r from-green-600 to-emerald-600';
+            } else if (result.verification === 'Likely False') {
+                statusClass = 'from-red-900 to-rose-900 border-red-500';
+                statusIcon = 'fa-times-circle';
+                statusBg = 'bg-gradient-to-r from-red-600 to-rose-600';
+            } else {
+                statusClass = 'from-yellow-900 to-orange-900 border-yellow-500';
+                statusIcon = 'fa-question-circle';
+                statusBg = 'bg-gradient-to-r from-yellow-600 to-orange-600';
+            }
+            
+            let sourcesHTML = '';
+            if (result.sources && result.sources.length > 0) {
+                sourcesHTML = `
+                    <div class="mt-6">
+                        <h4 class="font-semibold text-lg mb-3 flex items-center">
+                            <i class="fas fa-newspaper mr-2"></i>
+                            Top Sources Referenced:
+                        </h4>
+                        <div class="space-y-3">
+                            ${result.sources.map((source, index) => `
+                                <div class="bg-gray-800 bg-opacity-50 p-4 rounded-lg border border-gray-700 hover:border-cyan-500 transition-all duration-300">
+                                    <div class="flex items-start">
+                                        <span class="bg-cyan-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold mr-3 flex-shrink-0">${index + 1}</span>
+                                        <p class="text-gray-300 text-sm">${source}</p>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+            
+            document.getElementById('resultsContent').innerHTML = `
+                <div class="bg-gradient-to-br ${statusClass} bg-opacity-40 border-2 rounded-xl p-8 backdrop-blur-sm">
+                    <div class="flex items-start mb-6">
+                        <div class="${statusBg} w-16 h-16 rounded-full flex items-center justify-center mr-4 flex-shrink-0">
+                            <i class="fas ${statusIcon} text-3xl text-white"></i>
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="text-3xl font-bold text-white mb-2">${result.verification}</h3>
+                            <div class="flex items-center gap-3 mb-4">
+                                <span class="bg-white bg-opacity-20 px-4 py-2 rounded-full text-sm font-semibold">
+                                    <i class="fas fa-percentage mr-1"></i>
+                                    ${result.confidence}% Confidence
+                                </span>
+                                ${result.articles_analyzed ? `
+                                    <span class="bg-white bg-opacity-20 px-4 py-2 rounded-full text-sm font-semibold">
+                                        <i class="fas fa-file-alt mr-1"></i>
+                                        ${result.articles_analyzed} Articles
+                                    </span>
+                                ` : ''}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gray-900 bg-opacity-50 rounded-lg p-6 mb-4">
+                        <h4 class="font-semibold text-lg text-white mb-2 flex items-center">
+                            <i class="fas fa-quote-left mr-2 text-cyan-400"></i>
+                            Statement Analyzed:
+                        </h4>
+                        <p class="text-gray-200 text-lg italic">"${result.statement}"</p>
+                    </div>
+                    
+                    <div class="bg-gray-900 bg-opacity-50 rounded-lg p-6">
+                        <h4 class="font-semibold text-lg text-white mb-2 flex items-center">
+                            <i class="fas fa-brain mr-2 text-cyan-400"></i>
+                            Analysis:
+                        </h4>
+                        <p class="text-gray-200">${result.reason}</p>
+                    </div>
+                    
+                    ${sourcesHTML}
+                </div>
+            `;
+        }
+
+        function showPricing() {
+            document.getElementById('pricingModal').style.display = 'flex';
+        }
+
+        function closePricing() {
+            document.getElementById('pricingModal').style.display = 'none';
+            document.getElementById('billingInfo').style.display = 'none';
+        }
+
+        function selectPlan(amount, plan) {
+            document.getElementById('billingInfo').style.display = 'block';
+            document.getElementById('selectedPlan').textContent = plan;
+            document.getElementById('billingAmount').textContent = '₹' + amount;
+        }
+
+        function startSessionTimer() {
+            sessionTimeLeft = 900;
+            updateTimerDisplay();
+            
+            if (sessionTimer) {
+                clearInterval(sessionTimer);
+            }
+            
+            sessionTimer = setInterval(() => {
+                sessionTimeLeft--;
+                updateTimerDisplay();
+                
+                if (sessionTimeLeft <= 0) {
+                    clearInterval(sessionTimer);
+                    alert('Your session has expired. Please login again.');
+                    logout();
                 }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Registration error. Please try again.');
-            });
+            }, 1000);
         }
 
-        function showRegister() {
-            document.getElementById('loginForm').style.display = 'none';
-            document.getElementById('registerForm').style.display = 'block';
+        function updateTimerDisplay() {
+            const minutes = Math.floor(sessionTimeLeft / 60);
+            const seconds = sessionTimeLeft % 60;
+            document.getElementById('timerDisplay').textContent = 
+                `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
         }
 
-        function showLogin() {
-            document.getElementById('registerForm').style.display = 'none';
-            document.getElementById('loginForm').style.display = 'block';
+        function logout() {
+            if (sessionTimer) {
+                clearInterval(sessionTimer);
+            }
+            sessionStorage.removeItem('currentUser');
+            window.location.href = 'home.html';
         }
 
         function showMainApp() {
-            document.getElementById('loginModal').style.display = 'none';
-            document.getElementById('mainContent').style.display = 'block';
-            document.getElementById('subscribeBtn').style.display = 'block';
-            document.getElementById('userInfo').style.display = 'block';
-            
-            // Update user info
             document.getElementById('userEmail').textContent = currentUser.email;
             document.getElementById('userEmailHidden').value = currentUser.email;
             document.getElementById('userStatus').textContent = currentUser.subscription || 'Free';
             
-            // Show usage counter for free users
             if (!currentUser.subscription || currentUser.subscription === 'Free') {
-                document.getElementById('usageCounter').style.display = 'block';
-                userUsageCount = currentUser.usage_count || 5;
+                document.getElementById('usageCounter').classList.remove('hidden');
+                userUsageCount = currentUser.usage_count || 10;
                 updateUsageDisplay();
+            } else {
+                document.getElementById('userStatus').className = 'px-2 py-1 rounded-full text-xs bg-green-600 text-white';
             }
-            
-            // Update subscribe button
-            if (currentUser.subscription === 'Premium') {
-                document.getElementById('subscribeBtnText').textContent = 'Premium';
-                document.getElementById('subscribeBtn').style.background = 'linear-gradient(to right, #10b981, #059669)';
-            }
-        }
-
-        function handleSubscribe() {
-            if (currentUser.subscription === 'Premium') {
-                alert('You are already a Premium user!');
-                return;
-            }
-            
-            fetch('http://localhost:8000/subscribe', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email: currentUser.email })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    currentUser.subscription = 'Premium';
-                    document.getElementById('userStatus').textContent = 'Premium';
-                    document.getElementById('subscribeBtnText').textContent = 'Premium';
-                    document.getElementById('subscribeBtn').style.background = 'linear-gradient(to right, #10b981, #059669)';
-                    document.getElementById('usageCounter').style.display = 'none';
-                    alert('Welcome to Premium! Unlimited checks available.');
-                } else {
-                    alert('Subscription failed: ' + data.message);
-                }
-            });
-        }
-
-        function checkUsage() {
-            if (currentUser.subscription === 'Premium') {
-                return true; // Allow unlimited for premium users
-            }
-            
-            if (userUsageCount <= 0) {
-                alert('You have reached your daily limit! Subscribe to Premium for unlimited checks.');
-                return false;
-            }
-            
-            userUsageCount--;
-            updateUsageDisplay();
-            
-            // Update backend
-            fetch('http://localhost:8000/update_usage', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email: currentUser.email, usage_count: userUsageCount })
-            });
-            
-            return true;
         }
 
         function updateUsageDisplay() {
@@ -384,6 +662,7 @@
                 console.error('Failed to read clipboard');
             }
         }
+        
     </script>
 </body>
 </html>
