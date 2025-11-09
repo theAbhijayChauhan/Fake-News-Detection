@@ -8,7 +8,7 @@ import json
 from datetime import datetime, timedelta
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
-from config import NEWS_API_KEY
+from env import NEWS_API_KEY
 import re
 import os
 import traceback
